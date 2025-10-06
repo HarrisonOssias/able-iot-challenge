@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import QueryDialog from '../components/QueryDialog';
 
 type Row = Record<string, any>;
@@ -57,7 +58,7 @@ export default function Home() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Able Analytics</h1>
         <div className="space-x-3">
-          <a href="/docs" className="underline">Documentation</a>
+          <Link href="/docs" className="underline">Documentation</Link>
           <button onClick={() => setOpen(true)} className="rounded-md bg-indigo-600 px-3 py-1.5 text-white">Run example query</button>
         </div>
       </div>

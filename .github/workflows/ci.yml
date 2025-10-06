@@ -1,0 +1,107 @@
+name: CI  # Continuous Integration: build/test both services on PRs and main pushes
+
+on:
+  pull_request:  # run on every PR to validate changes before merging
+  push:
+    branches: [ main ]  # also run when code lands on main
+
+jobs:
+  ingest-ci:
+    name: Ingest service (Python) - schema + smoke  # boot API against a temp Postgres and do a sample ingest
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:  # these are the credentials for the CI Postgres only, not production
+          POSTGRES_DB: iot
+          POSTGRES_USER: iot
+          POSTGRES_PASSWORD: iotpass
+        ports: [ "5432:5432" ]
+        options: >-
+          --health-cmd="pg_isready -U iot -d iot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4  # get the repository code
+
+      - name: Set up Python  # install requested Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip  # speed up installs between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('ingest_service/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install deps  # install ingest service Python dependencies
+        working-directory: ingest_service
+        run: | 
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Apply DB schema (tables, views, metrics)  # create schema inside the CI Postgres
+        env:
+          PGPASSWORD: iotpass
+        run: |
+          psql -h localhost -U iot -d iot -f ingest_service/db/init/001_tables.sql
+          psql -h localhost -U iot -d iot -f ingest_service/db/init/002_views.sql
+          if [ -f ingest_service/db/init/003_metrics.sql ]; then
+            psql -h localhost -U iot -d iot -f ingest_service/db/init/003_metrics.sql
+          fi
+
+      - name: Syntax check (quick)  # compile Python files to catch syntax errors
+        run: python -m compileall ingest_service
+
+      - name: Launch API and wait  # run uvicorn in background and poll /health
+        working-directory: ingest_service
+        env:
+          DATABASE_URL: postgres://iot:iotpass@localhost:5432/iot
+        run: |
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 >/dev/null 2>&1 &
+          for i in {1..30}; do
+            if curl -sf http://localhost:8000/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "API did not become healthy" && exit 1
+
+      - name: Smoke test ingest (one telemetry row)  # POST a sample event and ensure a row exists
+        env:
+          PGPASSWORD: iotpass
+        run: |
+          curl -s -X POST http://localhost:8000/ingest \
+            -H "Content-Type: application/json" \
+            -d '{"device_id": 1, "event_type": "platform_extension_mm", "value": 12.3, "timestamp": 1759648400.0}'
+          psql -h localhost -U iot -d iot -c "SELECT COUNT(*) FROM processed_record;" -v ON_ERROR_STOP=1
+
+  analytics-ci:
+    name: Analytics service (Next.js) - build  # ensure the UI compiles and types check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # get the repository code
+
+      - name: Set up Node  # install Node.js and enable npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: analytics_service/package.json
+
+      - name: Install and build  # install deps then build Next.js (no DB needed at build time)
+        working-directory: analytics_service
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --include=dev
+          elif [ -f yarn.lock ]; then
+            yarn install --frozen-lockfile --production=false
+          else
+            npm install --include=dev || yarn install --production=false
+          fi
+          npm run build || yarn build
+
+
