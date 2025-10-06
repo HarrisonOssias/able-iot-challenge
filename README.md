@@ -23,7 +23,13 @@ cat > .env <<'EOF'
 POSTGRES_DB=iot
 POSTGRES_USER=iot
 POSTGRES_PASSWORD=iotpass
-# Optional: POSTGRES_PORT=5432
+POSTGRES_PORT=5432
+
+# python services
+API_PORT=8000
+WORKER_ENABLED=false   
+DATABASE_URL=postgresql://iot:iotpass@db:5432/iot 
+
 EOF
 ```
 
