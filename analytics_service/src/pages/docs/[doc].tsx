@@ -2,13 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import ReactMarkdown from 'react-markdown';
+import Link from 'next/link';
 
 type Props = { content: string; slug: string };
 
 export default function DocPage({ content, slug }: Props) {
   return (
     <div className="prose prose-indigo max-w-none px-6 py-6">
-      <a href="/docs" className="no-underline">← Back</a>
+      <Link href="/docs" className="no-underline">← Back</Link>
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );

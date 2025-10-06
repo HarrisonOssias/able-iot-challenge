@@ -71,6 +71,8 @@ jobs:
           echo "API did not become healthy" && exit 1
 
       - name: Smoke test ingest (one telemetry row)  # POST a sample event and ensure a row exists
+        env:
+          PGPASSWORD: iotpass
         run: |
           curl -s -X POST http://localhost:8000/ingest \
             -H "Content-Type: application/json" \

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 export default function DocsIndex() {
   const items = [
     { slug: 'INGEST_SERVICE', title: 'Ingest Service' },
@@ -11,10 +12,10 @@ export default function DocsIndex() {
       <h1>Documentation</h1>
       <ul>
         {items.map(i => (
-          <li key={i.slug}><a href={`/docs/${i.slug}`} className="font-bold underline hover:no-underline rounded-md px-2 hover:bg-gray-300">{i.title}</a></li>
+          <li key={i.slug}><Link href={`/docs/${i.slug}`} className="font-bold underline hover:no-underline rounded-md px-2 hover:bg-gray-300">{i.title}</Link></li>
         ))}
       </ul>
-      <p><a href="/">← Back to dashboard</a></p>
+      <p><Link href="/">← Back to dashboard</Link></p>
     </div>
   );
 }
