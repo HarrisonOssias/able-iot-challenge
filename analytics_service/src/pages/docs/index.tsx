@@ -4,6 +4,7 @@ export default function DocsIndex() {
     { slug: 'ANALYTICS_SERVICE', title: 'Analytics Service' },
     { slug: 'DATABASE', title: 'Database Schema' },
     { slug: 'SYSTEM_DESIGN', title: 'System Design' },
+    { slug: 'DEPLOYMENT_PLAN', title: 'Deployment Plan' },
   ];
   return (
     <div style={{ fontFamily: 'system-ui, Arial, sans-serif', padding: 24 }}>

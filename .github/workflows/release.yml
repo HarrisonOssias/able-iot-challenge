@@ -1,0 +1,43 @@
+name: Release  # Build and publish Docker images on version tags
+
+on:
+  push:
+    tags:
+      - "v*.*.*"  # e.g., v0.1.0 triggers a release build
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # needed to push to GHCR
+
+    steps:
+      - uses: actions/checkout@v4  # get the repository code
+
+      - name: Log in to GHCR  # authenticate to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build/push ingest image  # build FastAPI ingest image and push as latest and tag
+        uses: docker/build-push-action@v6
+        with:
+          context: ./ingest_service
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/ingest:latest
+            ghcr.io/${{ github.repository }}/ingest:${{ github.ref_name }}
+
+      - name: Build/push analytics image  # build Next.js analytics image and push as latest and tag
+        uses: docker/build-push-action@v6
+        with:
+          context: ./analytics_service
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/analytics:latest
+            ghcr.io/${{ github.repository }}/analytics:${{ github.ref_name }}
+
+
