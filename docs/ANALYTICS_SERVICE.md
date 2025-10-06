@@ -1,7 +1,7 @@
 # Analytics Service (Next.js)
 
 ## Overview
-Read-only Next.js app exposing API routes that query Postgres metrics/views and a simple React dashboard to visualize results. Runs separately from ingest.
+Next.js app exposing API routes that query Postgres metrics/views and a simple React dashboard to visualize results. Runs separately from ingest.
 
 ## API Routes
 - `/api/metrics/avg-extension-mm` – average platform extension in mm per device.
@@ -18,4 +18,4 @@ Read-only Next.js app exposing API routes that query Postgres metrics/views and 
 
 ## Local Dev
 - Compose target `analytics` runs `next dev` on port 8001.
-- Open `http://localhost:8001`.
+- Open `http://localhost:3000`.
