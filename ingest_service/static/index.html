@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>Able IoT Metrics</title>
+    <style>
+      body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+      h1 { margin-bottom: 4px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; }
+      code { background: #f6f8fa; padding: 2px 4px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Able IoT Metrics</h1>
+    <p>API health: <span id="health">checking…</span></p>
+    <div class="grid">
+      <div class="card">
+        <h3>Avg Extension (mm)</h3>
+        <div id="avg"></div>
+      </div>
+      <div class="card">
+        <h3>Extensions vs Retractions</h3>
+        <div id="exret"></div>
+      </div>
+      <div class="card">
+        <h3>Battery Summary</h3>
+        <div id="battery"></div>
+      </div>
+      <div class="card">
+        <h3>Platform Height</h3>
+        <div id="height"></div>
+      </div>
+    </div>
+
+    <script>
+      const api = location.origin;
+
+      async function getJson(path) {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }
+
+      function renderTable(el, rows) {
+        if (!rows.length) { el.textContent = 'No data'; return; }
+        const cols = Object.keys(rows[0]);
+        const thead = `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>`;
+        const tbody = `<tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${r[c]}</td>`).join('')}</tr>`).join('')}</tbody>`;
+        el.innerHTML = `<table>${thead}${tbody}</table>`;
+      }
+
+      async function loadOnce() {
+        try { const h = await getJson(`${api}/health`); document.getElementById('health').textContent = h.status; }
+        catch { document.getElementById('health').textContent = 'unhealthy'; }
+        try { renderTable(document.getElementById('avg'), await getJson(`${api}/metrics/avg-extension-mm`)); } catch {}
+        try { renderTable(document.getElementById('exret'), await getJson(`${api}/metrics/extension-vs-retraction`)); } catch {}
+        try { renderTable(document.getElementById('battery'), await getJson(`${api}/metrics/battery-summary`)); } catch {}
+        try { renderTable(document.getElementById('height'), await getJson(`${api}/metrics/platform-height`)); } catch {}
+      }
+
+      function startSSE() {
+        try {
+          const es = new EventSource(`${api}/metrics/stream`);
+          es.onmessage = (ev) => {
+            try {
+              const data = JSON.parse(ev.data);
+              if (data.avg) renderTable(document.getElementById('avg'), data.avg);
+              if (data.exret) renderTable(document.getElementById('exret'), data.exret);
+              if (data.battery) renderTable(document.getElementById('battery'), data.battery);
+              if (data.height) renderTable(document.getElementById('height'), data.height);
+            } catch {}
+          };
+          es.addEventListener('error', () => { /* keep last values */ });
+        } catch {
+          setInterval(loadOnce, 2000);
+        }
+      }
+
+      loadOnce();
+      startSSE();
+    </script>
+  </body>
+  </html>
+
+

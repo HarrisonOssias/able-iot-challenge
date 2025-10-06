@@ -1,0 +1,69 @@
+# ==========================
+# Root-level ignores
+# ==========================
+.env
+*.log
+*.local
+*.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+db.sqlite3
+*.db
+
+# Node / JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+*.pid
+*.sock
+*.pid.lock
+
+# ==========================
+# Next.js / React builds
+# ==========================
+.next/
+out/
+build/
+dist/
+coverage/
+
+# ==========================
+# Python services (ingest_service)
+# ==========================
+.ingest_service/__pycache__/
+ingest_service/__pycache__/
+*.pyc
+*.pyo
+
+# ==========================
+# JS/TS analytics_service
+# ==========================
+analytics_service/.next/
+analytics_service/node_modules/
+analytics_service/.turbo/
+analytics_service/.vercel/
+analytics_service/.env.local
+
+# ==========================
+# Other tooling / editors
+# ==========================
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ==========================
+# System / temporary
+# ==========================
+*.tmp
+*.bak
+*.cache
+*.log

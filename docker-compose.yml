@@ -1,0 +1,59 @@
+# docker-compose.yml
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: iot_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./ingest_service/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-iot} -d ${POSTGRES_DB:-iot}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  api:
+    build:
+      context: ./ingest_service
+    container_name: iot_api
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./ingest_service:/app # optional, for live reload in dev
+
+  analytics:
+    image: node:20-alpine
+    container_name: iot_analytics
+    working_dir: /app
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:3000"
+    volumes:
+      - ./analytics_service:/app
+      - ./docs:/app/docs:ro
+      - ./docs:/app/public/docs:ro
+    command: sh -c "yarn install --frozen-lockfile || npm install && yarn dev || npx next dev -p 3000"
+
+volumes:
+  db_data:
