@@ -58,6 +58,12 @@ jobs:
       - name: Syntax check (quick)  # compile Python files to catch syntax errors
         run: python -m compileall ingest_service
 
+      - name: Install test deps
+        run: pip install pytest pytest-asyncio
+
+      - name: Run unit tests
+        run: pytest -q
+
       - name: Launch API and wait  # run uvicorn in background and poll /health
         working-directory: ingest_service
         env:

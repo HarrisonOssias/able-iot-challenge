@@ -47,8 +47,8 @@ class Record(BaseModel):  # using base model for validation and type safety
 
 
 class IngestResult(BaseModel):
-    raw_id: int
-    processed_id: int | None = None
+    raw_id: Optional[int] = None
+    processed_id: Optional[int] = None
     status: str
 
 

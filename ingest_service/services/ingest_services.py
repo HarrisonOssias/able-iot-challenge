@@ -45,19 +45,25 @@ class IngestService:
             return IngestResult(raw_id=raw_id, status="error")
 
     async def ingest_one(self, payload: dict[str, Any]) -> IngestResult:
-        raw_id = await insert_raw(self.pool, payload)
-
-        # NEW: device_startup branch
+        # device_startup branch keeps logging the raw payload first (tests monkeypatch this)
         if payload.get("event_type") == "device_startup":
+            raw_id = await insert_raw(self.pool, payload)
             return await self._handle_startup(payload, raw_id)
 
-        # Existing telemetry path
+        # Telemetry path: validate BEFORE any DB writes so invalid payloads do not touch DB
         try:
             evt = Record(**payload)
         except ValidationError as ve:
+            # In unit tests we may not have a pool; just report invalid without DB writes
+            if self.pool is None:
+                return IngestResult(status="invalid")
+            # If a pool exists, optionally record raw + error for observability
+            raw_id = await insert_raw(self.pool, payload)
             await upsert_error(self.pool, raw_id, f"validation_error: {ve.errors()}")
             return IngestResult(raw_id=raw_id, status="invalid")
 
+        # Valid telemetry: proceed with DB writes
+        raw_id = await insert_raw(self.pool, payload)
         try:
             type_id = await get_record_type_id(self.pool, evt.event_type)
             # Ensure the device row exists for legacy generators that send numeric ids
