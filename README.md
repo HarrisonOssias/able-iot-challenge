@@ -5,7 +5,7 @@ I chose to tackle this problem by creating a series of containerized micro appli
 
 Two services backed by Postgres:
 - Ingest API (FastAPI) at http://localhost:8000 – accepts telemetry and startup events
-- Analytics UI (Next.js) at http://localhost:8001 – read-only dashboards, docs, and example queries
+- Analytics UI (Next.js) at http://localhost:3000 – read-only dashboards, docs, and example queries
 
 Database runs in Docker and is initialized from `ingest_service/db/init/*.sql` (tables, views, metrics).
 
