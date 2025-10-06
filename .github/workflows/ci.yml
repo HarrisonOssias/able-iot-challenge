@@ -11,15 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      postgres:  # ephemeral Postgres for CI only
+      postgres:
         image: postgres:16-alpine
-        env:
+        env:  # these are the credentials for the CI Postgres only, not production
           POSTGRES_DB: iot
           POSTGRES_USER: iot
           POSTGRES_PASSWORD: iotpass
         ports: [ "5432:5432" ]
         options: >-
-          --health-cmd="pg_isready -U iot -d iot"  # wait until DB is ready
+          --health-cmd="pg_isready -U iot -d iot"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
@@ -41,7 +41,7 @@ jobs:
 
       - name: Install deps  # install ingest service Python dependencies
         working-directory: ingest_service
-        run: |
+        run: | 
           pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -92,10 +92,14 @@ jobs:
 
       - name: Install and build  # install deps then build Next.js (no DB needed at build time)
         working-directory: analytics_service
-        env:
-          NODE_ENV: production
         run: |
-          npm ci || yarn install --frozen-lockfile
+          if [ -f package-lock.json ]; then
+            npm ci --include=dev
+          elif [ -f yarn.lock ]; then
+            yarn install --frozen-lockfile --production=false
+          else
+            npm install --include=dev || yarn install --production=false
+          fi
           npm run build || yarn build
 
 
