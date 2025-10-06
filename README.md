@@ -51,8 +51,7 @@ curl -s http://localhost:8000/health
 Open a terminal in the repo root and run:
 
 ```bash
-python3 -u publisher/iot_device_message_generator.py
-  | python3 publisher/pipe_to_api.py --url http://localhost:8000/ingest --batch 1 --verbose
+python3 -u publisher/iot_device_message_generator.py | python3 publisher/pipe_to_api.py --url http://localhost:8000/ingest --batch 1 --verbose
 ```
 
 Notes:
